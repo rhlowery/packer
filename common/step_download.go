@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/gofrs/flock"
 	getter "github.com/hashicorp/go-getter"
@@ -89,8 +90,26 @@ func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multis
 		lock.Lock()
 		defer lock.Unlock()
 
+		wd, err := os.Getwd()
+		if err != nil {
+			log.Printf("get working directory: %v", err)
+			// here we ignore the error in case the
+			// working directory is not needed.
+			// It would be better if the go-getter
+			// could guess it only in cases it is
+			// necessary.
+		}
+
 		ui.Say(fmt.Sprintf("Trying %s", u.String()))
-		if err := getter.GetFile(targetPath, u.String(), getter.WithProgress(ui), getter.WithContext(ctx)); err != nil {
+		gc := getter.Client{
+			Ctx:              ctx,
+			Dst:              targetPath,
+			Src:              u.String(),
+			ProgressListener: ui,
+			Pwd:              wd,
+			Dir:              false,
+		}
+		if err := gc.Get(); err != nil {
 			errs = append(errs, err)
 			continue // may be another url will work
 		}
