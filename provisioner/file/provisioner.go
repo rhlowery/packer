@@ -171,6 +171,7 @@ func (p *Provisioner) ProvisionUpload(ui packer.Ui, comm packer.Communicator) er
 		}
 
 		pf := ui.TrackProgress(filepath.Base(src), 0, info.Size(), f)
+		defer pf.Close()
 
 		// Upload the file
 		if err = comm.Upload(dst, pf, &fi); err != nil {
