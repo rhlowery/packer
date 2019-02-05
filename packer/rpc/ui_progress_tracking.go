@@ -4,6 +4,8 @@ import (
 	"io"
 	"log"
 	"net/rpc"
+
+	"github.com/hashicorp/packer/common/random"
 )
 
 // TrackProgress starts a pair of ProgressTrackingClient and ProgressProgressTrackingServer
@@ -64,7 +66,7 @@ func (ui *UiServer) NewTrackProgress(pl *TrackProgressParameters, reply *string)
 		id: *reply,
 	}
 
-	*reply = pl.Src
+	*reply = pl.Src + random.AlphaNum(6)
 	srvr.stream = ui.ui.TrackProgress(pl.Src, pl.CurrentSize, pl.TotalSize, nopReadCloser{})
 	err := ui.register("Ui"+*reply, srvr)
 	if err != nil {
