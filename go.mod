@@ -70,7 +70,7 @@ require (
 	github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce
 	github.com/hashicorp/go-checkpoint v0.0.0-20171009173528-1545e56e46de
 	github.com/hashicorp/go-cleanhttp v0.5.0
-	github.com/hashicorp/go-getter v1.0.3-0.20190207164204-dd24b919584a
+	github.com/hashicorp/go-getter v1.0.3
 	github.com/hashicorp/go-hclog v0.0.0-20181001195459-61d530d6c27f // indirect
 	github.com/hashicorp/go-immutable-radix v0.0.0-20180129170900-7f3cd4390caa // indirect
 	github.com/hashicorp/go-memdb v0.0.0-20181108192425-032f93b25bec // indirect
