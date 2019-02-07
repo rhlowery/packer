@@ -111,6 +111,9 @@ func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multis
 		}
 		if err := gc.Get(); err != nil {
 			errs = append(errs, err)
+			if ctx.Err() != nil {
+				break
+			}
 			continue // may be another url will work
 		}
 
