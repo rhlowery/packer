@@ -42,7 +42,13 @@ func (p *uiProgressBar) TrackProgress(src string, currentSize, totalSize int64, 
 
 	if p.pool == nil {
 		p.pool = pb.NewPool()
-		p.pool.Start()
+		err := p.pool.Start()
+		if err != nil {
+			// here, we probably cannot lock
+			// stdout, so let's just return
+			// stream to avoid any error.
+			return stream
+		}
 	}
 	p.pool.Add(newPb)
 	reader := newPb.NewProxyReader(stream)
