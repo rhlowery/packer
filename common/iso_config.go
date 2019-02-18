@@ -2,8 +2,6 @@ package common
 
 import (
 	"errors"
-	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/hashicorp/packer/template/interpolate"
@@ -53,30 +51,10 @@ func (c *ISOConfig) Prepare(ctx *interpolate.Context) (warnings []string, errs [
 		return warnings, errs
 	}
 
-	if c.ISOChecksum != "" {
-		return warnings, errs
-	}
-
-	if c.ISOChecksumURL == "" {
-		errs = append(
-			errs, errors.New("Due to large file sizes, an iso_checksum is required"))
-		return warnings, errs
-	}
-
-	for i := range c.ISOUrls {
-		u := c.ISOUrls[i]
-		nu, err := url.Parse(u)
-		if err != nil {
-			errs = append(
-				errs, fmt.Errorf("Unable to parse %s: %v", u, err))
-			continue
-		}
-		// add checksum in url so that
-		// go-getter  to run checksumming for us
-		q := nu.Query()
-		q.Set("checksum", c.ISOChecksumType+":"+c.ISOChecksum)
-		nu.RawQuery = q.Encode()
-		c.ISOUrls[i] = nu.String()
+	if c.ISOChecksumURL != "" {
+		// go-getter auto-parses checksum files
+		c.ISOChecksumType = "file"
+		c.ISOChecksum = c.ISOChecksumURL
 	}
 
 	return warnings, errs
