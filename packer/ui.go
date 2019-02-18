@@ -371,6 +371,7 @@ func (u *TimestampedUi) timestampLine(string string) string {
 type SafeUi struct {
 	Sem chan int
 	Ui  Ui
+	*uiProgressBar
 }
 
 var _ Ui = new(SafeUi)
@@ -405,8 +406,4 @@ func (u *SafeUi) Machine(t string, args ...string) {
 	u.Sem <- 1
 	u.Ui.Machine(t, args...)
 	<-u.Sem
-}
-
-func (u *SafeUi) ProgressBar() ProgressBar {
-	return new(NoopProgressBar)
 }
