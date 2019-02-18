@@ -93,13 +93,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook) (packer.Artifact, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !b.config.AMISkipRegionValidation {
-		regionsToValidate := append(b.config.AMIRegions, b.config.RawRegion)
-		err := b.config.AccessConfig.ValidateRegion(regionsToValidate...)
-		if err != nil {
-			return nil, fmt.Errorf("error validating regions: %v", err)
-		}
-	}
+
 	ec2conn := ec2.New(session, &aws.Config{
 		HTTPClient: commonhelper.HttpClientWithEnvironmentProxy(),
 	})
@@ -107,6 +101,8 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook) (packer.Artifact, error) {
 	// Setup the state bag and initial state for the steps
 	state := new(multistep.BasicStateBag)
 	state.Put("config", &b.config)
+	state.Put("access_config", &b.config.AccessConfig)
+	state.Put("ami_config", &b.config.AMIConfig)
 	state.Put("ec2", ec2conn)
 	state.Put("awsSession", session)
 	state.Put("hook", hook)
