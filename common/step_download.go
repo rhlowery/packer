@@ -62,6 +62,10 @@ func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multis
 			continue // may be another url will work
 		}
 		if s.ChecksumType != "none" {
+			if s.Checksum == "" {
+				errs = append(errs, fmt.Errorf("Empty %s checksum", s.ChecksumType))
+				continue
+			}
 			// add checksum to url query params as go getter will checksum for us
 			q := u.Query()
 			q.Set("checksum", s.ChecksumType+":"+s.Checksum)
