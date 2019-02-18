@@ -31,11 +31,6 @@ func (c *ISOConfig) Prepare(ctx *interpolate.Context) (warnings []string, errs [
 		return
 	}
 
-	if c.ISOChecksumType == "" {
-		errs = append(
-			errs, errors.New("The iso_checksum_type must be specified"))
-		return
-	}
 	c.ISOChecksumType = strings.ToLower(c.ISOChecksumType)
 
 	if c.TargetExtension == "" {
