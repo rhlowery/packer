@@ -5,6 +5,14 @@ cache into a "`hash($iso_url+$iso_checksum).$iso_target_extension`" file.
 Packer uses [hashicorp/go-getter](https://github.com/hashicorp/go-getter) in
 file mode in order to perform a download.
 
+go-getter supports the following protocols:
+
+* Local files
+* Git
+* Mercurial
+* HTTP
+* Amazon S3
+
 
 \~&gt; On windows - when referencing a local iso - if packer is running without
 symlinking rights, the iso will be copied to the cache folder. Read [Symlinks
