@@ -125,7 +125,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 	var errs *packer.MultiError
 	warnings := make([]string, 0)
 
-	if b.config.RawSingleISOUrl != "" || len(b.config.ISOUrls) > 0 {
+	if len(b.config.ISOUrls) > 0 {
 		isoWarnings, isoErrs := b.config.ISOConfig.Prepare(&b.config.ctx)
 		warnings = append(warnings, isoWarnings...)
 		errs = packer.MultiErrorAppend(errs, isoErrs...)
@@ -397,7 +397,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook) (packer.Artifact, error) {
 		},
 	}
 
-	if b.config.RawSingleISOUrl != "" || len(b.config.ISOUrls) > 0 {
+	if len(b.config.ISOUrls) > 0 {
 		steps = append(steps,
 			&common.StepDownload{
 				Checksum:     b.config.ISOChecksum,
