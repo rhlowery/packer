@@ -2,6 +2,7 @@ package common
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/hashicorp/packer/template/interpolate"
@@ -47,6 +48,10 @@ func (c *ISOConfig) Prepare(ctx *interpolate.Context) (warnings []string, errs [
 	}
 
 	if c.ISOChecksumURL != "" {
+		if strings.HasSuffix(strings.ToLower(c.ISOChecksumURL), ".iso") {
+			errs = append(errs, fmt.Errorf("Error parsing checksum:"+
+				" .iso is not a valid checksum extension"))
+		}
 		// go-getter auto-parses checksum files
 		c.ISOChecksumType = "file"
 		c.ISOChecksum = c.ISOChecksumURL
