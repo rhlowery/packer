@@ -223,8 +223,8 @@ func TestBuilderPrepare_ISOChecksumType(t *testing.T) {
 	if len(warns) > 0 {
 		t.Fatalf("bad: %#v", warns)
 	}
-	if err == nil {
-		t.Fatal("should have error")
+	if err != nil {
+		t.Fatalf("should not have error: %s", err)
 	}
 
 	// Test good
@@ -240,17 +240,6 @@ func TestBuilderPrepare_ISOChecksumType(t *testing.T) {
 
 	if b.config.ISOChecksumType != "md5" {
 		t.Fatalf("should've lowercased: %s", b.config.ISOChecksumType)
-	}
-
-	// Test unknown
-	config["iso_checksum_type"] = "fake"
-	b = Builder{}
-	warns, err = b.Prepare(config)
-	if len(warns) > 0 {
-		t.Fatalf("bad: %#v", warns)
-	}
-	if err == nil {
-		t.Log("Run ( go-getter.GetFile ) will validates the checksum.")
 	}
 
 	// Test none
