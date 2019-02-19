@@ -20,6 +20,11 @@ type ISOConfig struct {
 }
 
 func (c *ISOConfig) Prepare(ctx *interpolate.Context) (warnings []string, errs []error) {
+	if c.RawSingleISOUrl != "" && len(c.ISOUrls) != 0 {
+		errs = append(
+			errs, errors.New("Only one of iso_url or iso_urls can be specified"))
+		return
+	}
 
 	if c.RawSingleISOUrl != "" {
 		// make sure only array is set
