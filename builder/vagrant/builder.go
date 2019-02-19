@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -123,14 +124,9 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 			errs = packer.MultiErrorAppend(errs, fmt.Errorf("You may either set global_id or source_path but not both"))
 		}
 		if strings.HasSuffix(b.config.SourceBox, ".box") {
-			b.config.SourceBox, err = common.ValidatedURL(b.config.SourceBox)
-			if err != nil {
-				errs = packer.MultiErrorAppend(errs, fmt.Errorf("source_path is invalid: %s", err))
-			}
-			fileOK := common.FileExistsLocally(b.config.SourceBox)
-			if !fileOK {
-				errs = packer.MultiErrorAppend(errs,
-					fmt.Errorf("Source file '%s' needs to exist at time of config validation!", b.config.SourceBox))
+			if _, err := os.Stat(b.config.SourceBox); err != nil {
+				packer.MultiErrorAppend(errs,
+					fmt.Errorf("Source box '%s' needs to exist at time of config validation! %v", b.config.SourceBox, err))
 			}
 		}
 	}
