@@ -62,5 +62,9 @@ func (c *ISOConfig) Prepare(ctx *interpolate.Context) (warnings []string, errs [
 		c.ISOChecksum = c.ISOChecksumURL
 	}
 
+	if c.ISOChecksum == "" {
+		errs = append(errs, fmt.Errorf("A checksum must be specified"))
+	}
+
 	return warnings, errs
 }
