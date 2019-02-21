@@ -119,17 +119,26 @@ func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multis
 			Pwd:              wd,
 			Dir:              false,
 		}
-		if err := gc.Get(); err != nil {
+
+		switch err := gc.Get(); err.(type) {
+		case nil: // success !
+			ui.Say(fmt.Sprintf("%s => %s", u.String(), targetPath))
+			state.Put(s.ResultKey, targetPath)
+			return multistep.ActionContinue
+		case *getter.ChecksumError:
+			errs = append(errs, err)
+			ui.Say(fmt.Sprintf("Checksum did not match, removing %s", targetPath))
+			if err := os.Remove(targetPath); err != nil {
+				errs = append(errs, err)
+			}
+		default:
 			errs = append(errs, err)
 			if ctx.Err() != nil {
-				break
+				state.Put("error", fmt.Errorf("Download cancelled: %v", errs))
+				return multistep.ActionHalt
 			}
-			continue // may be another url will work
 		}
 
-		ui.Say(fmt.Sprintf("%s => %s", u.String(), targetPath))
-		state.Put(s.ResultKey, targetPath)
-		return multistep.ActionContinue
 	}
 
 	state.Put("error", fmt.Errorf("Downloading file: %v", errs))
