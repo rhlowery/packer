@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/gofrs/flock"
 	getter "github.com/hashicorp/go-getter"
@@ -75,11 +74,15 @@ func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multis
 
 		targetPath := s.TargetPath
 		if targetPath == "" {
-			filename := filepath.Base(u.String())
-			checksum := u.Query().Get("checksum")
-			// generate shasum of url+checksum
-			// to download file in cache path
-			shaSum := sha1.Sum([]byte(filename + ":" + checksum))
+			// store file under sha1(hash) if set
+			// hash can sometimes be a checksum url
+			// otherwise, use sha1(source_url)
+			var shaSum [20]byte
+			if s.Checksum != "" {
+				shaSum = sha1.Sum([]byte(s.Checksum))
+			} else {
+				shaSum = sha1.Sum([]byte(u.String()))
+			}
 			targetPath = hex.EncodeToString(shaSum[:])
 			if s.Extension != "" {
 				targetPath += "." + s.Extension
