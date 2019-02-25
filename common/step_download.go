@@ -73,6 +73,10 @@ func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multis
 			q := u.Query()
 			q.Set("checksum", s.ChecksumType+":"+s.Checksum)
 			u.RawQuery = q.Encode()
+		} else if s.Checksum != "" {
+			q := u.Query()
+			q.Set("checksum", s.Checksum)
+			u.RawQuery = q.Encode()
 		}
 
 		targetPath := s.TargetPath
