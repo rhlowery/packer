@@ -43,21 +43,15 @@ func TestStepDownload_Run(t *testing.T) {
 		Url          []string
 		Extension    string
 	}
-	type args struct {
-		ctx   context.Context
-		state multistep.StateBag
-	}
 
 	tests := []struct {
 		name      string
 		fields    fields
-		args      args
 		want      multistep.StepAction
 		wantFiles []string
 	}{
 		{"successfull dl - checksum from url",
 			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt?checksum=" + cs["another.txt"]}},
-			args{context.Background(), testState(t)},
 			multistep.ActionContinue,
 			[]string{
 				toSha1(cs["another.txt"]) + ".txt",
@@ -66,7 +60,6 @@ func TestStepDownload_Run(t *testing.T) {
 		},
 		{"successfull dl - checksum from parameter - no checksum type",
 			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt?"}, Checksum: cs["another.txt"]},
-			args{context.Background(), testState(t)},
 			multistep.ActionContinue,
 			[]string{
 				toSha1(cs["another.txt"]) + ".txt",
@@ -89,7 +82,7 @@ func TestStepDownload_Run(t *testing.T) {
 			defer os.Setenv("PACKER_CACHE_DIR", os.Getenv("PACKER_CACHE_DIR"))
 			os.Setenv("PACKER_CACHE_DIR", dir)
 
-			if got := s.Run(tt.args.ctx, tt.args.state); !reflect.DeepEqual(got, tt.want) {
+			if got := s.Run(context.Background(), testState(t)); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("StepDownload.Run() = %v, want %v", got, tt.want)
 			}
 			files := listFiles(t, dir)
