@@ -40,6 +40,7 @@ func TestStepDownload_Run(t *testing.T) {
 	defer srvr.Close()
 
 	cs := map[string]string{
+		"/root/basic.txt":   "f572d396fae9206628714fb2ce00f72e94f2258f",
 		"/root/another.txt": "7c6e5dd1bacb3b48fdffba2ed096097eb172497d",
 	}
 
@@ -59,20 +60,36 @@ func TestStepDownload_Run(t *testing.T) {
 		want      multistep.StepAction
 		wantFiles []string
 	}{
+		{"bad checksum removes file - without Checksum Type",
+			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/another.txt")}, Checksum: cs["/root/basic.txt"]},
+			multistep.ActionHalt,
+			[]string{
+				// toSha1(cs["bad"]) + ".txt",
+				toSha1(cs["/root/basic.txt"]) + ".txt.lock",
+			},
+		},
+		{"bad checksum removes file - with Checksum Type",
+			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/another.txt")}, ChecksumType: "sha1", Checksum: cs["/root/basic.txt"]},
+			multistep.ActionHalt,
+			[]string{
+				// toSha1(cs["bad"]) + ".txt",
+				toSha1(cs["/root/basic.txt"]) + ".txt.lock",
+			},
+		},
 		{"successfull http dl - checksum from http file - parameter",
-			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt"}, Checksum: srvr.URL + "/root/another.txt.shasum", ChecksumType: "file"},
+			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt"}, Checksum: srvr.URL + "/root/another.txt.sha1sum", ChecksumType: "file"},
 			multistep.ActionContinue,
 			[]string{
-				toSha1(srvr.URL+"/root/another.txt.shasum") + ".txt",
-				toSha1(srvr.URL+"/root/another.txt.shasum") + ".txt.lock", // a lock file is created & deleted on mac
+				toSha1(srvr.URL+"/root/another.txt.sha1sum") + ".txt",
+				toSha1(srvr.URL+"/root/another.txt.sha1sum") + ".txt.lock", // a lock file is created & deleted on mac
 			},
 		},
 		{"successfull http dl - checksum from http file - url",
-			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt?checksum=file:" + srvr.URL + "/root/another.txt.shasum"}},
+			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt?checksum=file:" + srvr.URL + "/root/another.txt.sha1sum"}},
 			multistep.ActionContinue,
 			[]string{
-				toSha1("file:"+srvr.URL+"/root/another.txt.shasum") + ".txt",
-				toSha1("file:"+srvr.URL+"/root/another.txt.shasum") + ".txt.lock", // a lock file is created & deleted on mac
+				toSha1("file:"+srvr.URL+"/root/another.txt.sha1sum") + ".txt",
+				toSha1("file:"+srvr.URL+"/root/another.txt.sha1sum") + ".txt.lock", // a lock file is created & deleted on mac
 			},
 		},
 		{"successfull http dl - checksum from url",
@@ -140,7 +157,7 @@ func TestStepDownload_Run(t *testing.T) {
 			os.Setenv("PACKER_CACHE_DIR", dir)
 
 			if got := s.Run(context.Background(), testState(t)); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("StepDownload.Run() = %v, want %v", got, tt.want)
+				t.Fatalf("StepDownload.Run() = %v, want %v", got, tt.want)
 			}
 			files := listFiles(t, dir)
 			if diff := cmp.Diff(tt.wantFiles, files); diff != "" {
