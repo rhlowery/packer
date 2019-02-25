@@ -59,12 +59,20 @@ func TestStepDownload_Run(t *testing.T) {
 		want      multistep.StepAction
 		wantFiles []string
 	}{
-		{"successfull http dl - checksum from http file",
+		{"successfull http dl - checksum from http file - parameter",
 			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt"}, Checksum: srvr.URL + "/root/another.txt.shasum", ChecksumType: "file"},
 			multistep.ActionContinue,
 			[]string{
 				toSha1(srvr.URL+"/root/another.txt.shasum") + ".txt",
 				toSha1(srvr.URL+"/root/another.txt.shasum") + ".txt.lock", // a lock file is created & deleted on mac
+			},
+		},
+		{"successfull http dl - checksum from http file - url",
+			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt?checksum=file:" + srvr.URL + "/root/another.txt.shasum"}},
+			multistep.ActionContinue,
+			[]string{
+				toSha1("file:"+srvr.URL+"/root/another.txt.shasum") + ".txt",
+				toSha1("file:"+srvr.URL+"/root/another.txt.shasum") + ".txt.lock", // a lock file is created & deleted on mac
 			},
 		},
 		{"successfull http dl - checksum from url",
