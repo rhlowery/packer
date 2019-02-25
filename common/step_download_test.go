@@ -64,15 +64,13 @@ func TestStepDownload_Run(t *testing.T) {
 			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/another.txt")}, Checksum: cs["/root/basic.txt"]},
 			multistep.ActionHalt,
 			[]string{
-				// toSha1(cs["bad"]) + ".txt",
-				toSha1(cs["/root/basic.txt"]) + ".txt.lock",
+				toSha1(cs["/root/basic.txt"]) + ".txt.lock", // a lock file is created & deleted on mac for each download
 			},
 		},
 		{"bad checksum removes file - with Checksum Type",
 			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/another.txt")}, ChecksumType: "sha1", Checksum: cs["/root/basic.txt"]},
 			multistep.ActionHalt,
 			[]string{
-				// toSha1(cs["bad"]) + ".txt",
 				toSha1(cs["/root/basic.txt"]) + ".txt.lock",
 			},
 		},
@@ -81,7 +79,7 @@ func TestStepDownload_Run(t *testing.T) {
 			multistep.ActionContinue,
 			[]string{
 				toSha1(srvr.URL+"/root/another.txt.sha1sum") + ".txt",
-				toSha1(srvr.URL+"/root/another.txt.sha1sum") + ".txt.lock", // a lock file is created & deleted on mac
+				toSha1(srvr.URL+"/root/another.txt.sha1sum") + ".txt.lock",
 			},
 		},
 		{"successfull http dl - checksum from http file - url",
@@ -89,7 +87,7 @@ func TestStepDownload_Run(t *testing.T) {
 			multistep.ActionContinue,
 			[]string{
 				toSha1("file:"+srvr.URL+"/root/another.txt.sha1sum") + ".txt",
-				toSha1("file:"+srvr.URL+"/root/another.txt.sha1sum") + ".txt.lock", // a lock file is created & deleted on mac
+				toSha1("file:"+srvr.URL+"/root/another.txt.sha1sum") + ".txt.lock",
 			},
 		},
 		{"successfull http dl - checksum from url",
@@ -97,7 +95,7 @@ func TestStepDownload_Run(t *testing.T) {
 			multistep.ActionContinue,
 			[]string{
 				toSha1(cs["/root/another.txt"]) + ".txt",
-				toSha1(cs["/root/another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
+				toSha1(cs["/root/another.txt"]) + ".txt.lock",
 			},
 		},
 		{"successfull http dl - checksum from parameter - no checksum type",
@@ -113,7 +111,7 @@ func TestStepDownload_Run(t *testing.T) {
 			multistep.ActionContinue,
 			[]string{
 				toSha1(cs["/root/another.txt"]) + ".txt",
-				toSha1(cs["/root/another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
+				toSha1(cs["/root/another.txt"]) + ".txt.lock",
 			},
 		},
 		{"successfull relative symlink - checksum from parameter - no checksum type",
@@ -129,7 +127,7 @@ func TestStepDownload_Run(t *testing.T) {
 			multistep.ActionContinue,
 			[]string{
 				toSha1(cs["/root/another.txt"]) + ".txt",
-				toSha1(cs["/root/another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
+				toSha1(cs["/root/another.txt"]) + ".txt.lock",
 			},
 		},
 		{"successfull absolute symlink - checksum from parameter - no checksum type",
