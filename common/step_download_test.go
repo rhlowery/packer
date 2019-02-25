@@ -55,7 +55,7 @@ func TestStepDownload_Run(t *testing.T) {
 			multistep.ActionContinue,
 			[]string{
 				toSha1(cs["another.txt"]) + ".txt",
-				toSha1(cs["another.txt"]) + ".txt.lock",
+				toSha1(cs["another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
 			},
 		},
 		{"successfull dl - checksum from parameter - no checksum type",
