@@ -136,6 +136,7 @@ func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multis
 			}
 		default:
 			errs = append(errs, err)
+			ui.Say(fmt.Sprintf("Download failed %s", err))
 			if ctx.Err() != nil {
 				state.Put("error", fmt.Errorf("Download cancelled: %v", errs))
 				return multistep.ActionHalt
