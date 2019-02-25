@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -24,6 +25,14 @@ var _ multistep.Step = new(StepDownload)
 func toSha1(in string) string {
 	b := sha1.Sum([]byte(in))
 	return hex.EncodeToString(b[:])
+}
+
+func abs(t *testing.T, path string) string {
+	path, err := filepath.Abs(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return path
 }
 
 func TestStepDownload_Run(t *testing.T) {
@@ -50,7 +59,7 @@ func TestStepDownload_Run(t *testing.T) {
 		want      multistep.StepAction
 		wantFiles []string
 	}{
-		{"successfull dl - checksum from url",
+		{"successfull http dl - checksum from url",
 			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt?checksum=" + cs["another.txt"]}},
 			multistep.ActionContinue,
 			[]string{
@@ -58,8 +67,40 @@ func TestStepDownload_Run(t *testing.T) {
 				toSha1(cs["another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
 			},
 		},
-		{"successfull dl - checksum from parameter - no checksum type",
+		{"successfull http dl - checksum from parameter - no checksum type",
 			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt?"}, Checksum: cs["another.txt"]},
+			multistep.ActionContinue,
+			[]string{
+				toSha1(cs["another.txt"]) + ".txt",
+				toSha1(cs["another.txt"]) + ".txt.lock",
+			},
+		},
+		{"successfull relative symlink - checksum from url",
+			fields{Extension: "txt", Url: []string{"./test-fixtures/root/another.txt?checksum=" + cs["another.txt"]}},
+			multistep.ActionContinue,
+			[]string{
+				toSha1(cs["another.txt"]) + ".txt",
+				toSha1(cs["another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
+			},
+		},
+		{"successfull relative symlink - checksum from parameter - no checksum type",
+			fields{Extension: "txt", Url: []string{"./test-fixtures/root/another.txt?"}, Checksum: cs["another.txt"]},
+			multistep.ActionContinue,
+			[]string{
+				toSha1(cs["another.txt"]) + ".txt",
+				toSha1(cs["another.txt"]) + ".txt.lock",
+			},
+		},
+		{"successfull absolute symlink - checksum from url",
+			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/another.txt") + "?checksum=" + cs["another.txt"]}},
+			multistep.ActionContinue,
+			[]string{
+				toSha1(cs["another.txt"]) + ".txt",
+				toSha1(cs["another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
+			},
+		},
+		{"successfull absolute symlink - checksum from parameter - no checksum type",
+			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/another.txt") + "?"}, Checksum: cs["another.txt"]},
 			multistep.ActionContinue,
 			[]string{
 				toSha1(cs["another.txt"]) + ".txt",
