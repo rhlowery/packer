@@ -61,7 +61,10 @@ func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multis
 			errs = append(errs, fmt.Errorf("url parse: %s", err))
 			continue // may be another url will work
 		}
-		if s.ChecksumType != "none" {
+		if checksum := u.Query().Get("checksum"); checksum != "" {
+			s.Checksum = checksum
+		}
+		if s.ChecksumType != "" && s.ChecksumType != "none" {
 			if s.Checksum == "" {
 				errs = append(errs, fmt.Errorf("Empty %s checksum", s.ChecksumType))
 				continue
