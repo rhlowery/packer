@@ -40,7 +40,7 @@ func TestStepDownload_Run(t *testing.T) {
 	defer srvr.Close()
 
 	cs := map[string]string{
-		"another.txt": "7c6e5dd1bacb3b48fdffba2ed096097eb172497d",
+		"/root/another.txt": "7c6e5dd1bacb3b48fdffba2ed096097eb172497d",
 	}
 
 	type fields struct {
@@ -59,52 +59,60 @@ func TestStepDownload_Run(t *testing.T) {
 		want      multistep.StepAction
 		wantFiles []string
 	}{
-		{"successfull http dl - checksum from url",
-			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt?checksum=" + cs["another.txt"]}},
+		{"successfull http dl - checksum from http file",
+			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt"}, Checksum: srvr.URL + "/root/another.txt.shasum", ChecksumType: "file"},
 			multistep.ActionContinue,
 			[]string{
-				toSha1(cs["another.txt"]) + ".txt",
-				toSha1(cs["another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
+				toSha1(srvr.URL+"/root/another.txt.shasum") + ".txt",
+				toSha1(srvr.URL+"/root/another.txt.shasum") + ".txt.lock", // a lock file is created & deleted on mac
+			},
+		},
+		{"successfull http dl - checksum from url",
+			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt?checksum=" + cs["/root/another.txt"]}},
+			multistep.ActionContinue,
+			[]string{
+				toSha1(cs["/root/another.txt"]) + ".txt",
+				toSha1(cs["/root/another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
 			},
 		},
 		{"successfull http dl - checksum from parameter - no checksum type",
-			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt?"}, Checksum: cs["another.txt"]},
+			fields{Extension: "txt", Url: []string{srvr.URL + "/root/another.txt?"}, Checksum: cs["/root/another.txt"]},
 			multistep.ActionContinue,
 			[]string{
-				toSha1(cs["another.txt"]) + ".txt",
-				toSha1(cs["another.txt"]) + ".txt.lock",
+				toSha1(cs["/root/another.txt"]) + ".txt",
+				toSha1(cs["/root/another.txt"]) + ".txt.lock",
 			},
 		},
 		{"successfull relative symlink - checksum from url",
-			fields{Extension: "txt", Url: []string{"./test-fixtures/root/another.txt?checksum=" + cs["another.txt"]}},
+			fields{Extension: "txt", Url: []string{"./test-fixtures/root/another.txt?checksum=" + cs["/root/another.txt"]}},
 			multistep.ActionContinue,
 			[]string{
-				toSha1(cs["another.txt"]) + ".txt",
-				toSha1(cs["another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
+				toSha1(cs["/root/another.txt"]) + ".txt",
+				toSha1(cs["/root/another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
 			},
 		},
 		{"successfull relative symlink - checksum from parameter - no checksum type",
-			fields{Extension: "txt", Url: []string{"./test-fixtures/root/another.txt?"}, Checksum: cs["another.txt"]},
+			fields{Extension: "txt", Url: []string{"./test-fixtures/root/another.txt?"}, Checksum: cs["/root/another.txt"]},
 			multistep.ActionContinue,
 			[]string{
-				toSha1(cs["another.txt"]) + ".txt",
-				toSha1(cs["another.txt"]) + ".txt.lock",
+				toSha1(cs["/root/another.txt"]) + ".txt",
+				toSha1(cs["/root/another.txt"]) + ".txt.lock",
 			},
 		},
 		{"successfull absolute symlink - checksum from url",
-			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/another.txt") + "?checksum=" + cs["another.txt"]}},
+			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/another.txt") + "?checksum=" + cs["/root/another.txt"]}},
 			multistep.ActionContinue,
 			[]string{
-				toSha1(cs["another.txt"]) + ".txt",
-				toSha1(cs["another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
+				toSha1(cs["/root/another.txt"]) + ".txt",
+				toSha1(cs["/root/another.txt"]) + ".txt.lock", // a lock file is created & deleted on mac
 			},
 		},
 		{"successfull absolute symlink - checksum from parameter - no checksum type",
-			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/another.txt") + "?"}, Checksum: cs["another.txt"]},
+			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/another.txt") + "?"}, Checksum: cs["/root/another.txt"]},
 			multistep.ActionContinue,
 			[]string{
-				toSha1(cs["another.txt"]) + ".txt",
-				toSha1(cs["another.txt"]) + ".txt.lock",
+				toSha1(cs["/root/another.txt"]) + ".txt",
+				toSha1(cs["/root/another.txt"]) + ".txt.lock",
 			},
 		},
 	}
