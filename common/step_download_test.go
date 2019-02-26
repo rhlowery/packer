@@ -65,7 +65,7 @@ func TestStepDownload_Run(t *testing.T) {
 			multistep.ActionHalt,
 			nil,
 		},
-		{" none checksum works, without a checksum",
+		{"none checksum works, without a checksum",
 			fields{Url: []string{abs(t, "./test-fixtures/root/another.txt")}, ChecksumType: "none"},
 			multistep.ActionContinue,
 			[]string{
@@ -73,18 +73,25 @@ func TestStepDownload_Run(t *testing.T) {
 				toSha1(abs(t, "./test-fixtures/root/another.txt")) + ".lock",
 			},
 		},
-		{"bad checksum removes file - no Checksum Type",
+		{"bad checksum removes file - checksum from string - no Checksum Type",
 			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/another.txt")}, Checksum: cs["/root/basic.txt"]},
 			multistep.ActionHalt,
 			[]string{
 				toSha1(cs["/root/basic.txt"]) + ".txt.lock", // a lock file is created & deleted on mac for each download
 			},
 		},
-		{"bad checksum removes file - Checksum Type",
+		{"bad checksum removes file - checksum from string - Checksum Type",
 			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/another.txt")}, ChecksumType: "sha1", Checksum: cs["/root/basic.txt"]},
 			multistep.ActionHalt,
 			[]string{
 				toSha1(cs["/root/basic.txt"]) + ".txt.lock",
+			},
+		},
+		{"bad checksum removes file - checksum from url - Checksum Type",
+			fields{Extension: "txt", Url: []string{abs(t, "./test-fixtures/root/basic.txt")}, Checksum: srvr.URL + "/root/another.txt.sha1sum", ChecksumType: "file"},
+			multistep.ActionHalt,
+			[]string{
+				toSha1(srvr.URL+"/root/another.txt.sha1sum") + ".txt.lock",
 			},
 		},
 		{"successfull http dl - checksum from http file - parameter",
