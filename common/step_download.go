@@ -73,7 +73,7 @@ func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multis
 			q := u.Query()
 			q.Set("checksum", s.Checksum)
 			u.RawQuery = q.Encode()
-		} else {
+		} else if s.ChecksumType != "none" {
 			errs = append(errs, fmt.Errorf("Empty checksum"))
 			continue
 		}
