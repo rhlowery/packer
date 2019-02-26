@@ -51,106 +51,112 @@ type StepDownload struct {
 
 func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
+	defer ui.Say(fmt.Sprintf("leaving retrieve loop for %s", s.Description))
 
 	ui.Say(fmt.Sprintf("Retrieving %s", s.Description))
 
 	var errs []error
-	for i := range s.Url {
-		u, err := urlhelper.Parse(s.Url[i])
-		if err != nil {
-			errs = append(errs, fmt.Errorf("url parse: %s", err))
-			continue // may be another url will work
+	for _, source := range s.Url {
+		if ctx.Err() != nil {
+			state.Put("error", fmt.Errorf("Download cancelled: %v", errs))
+			return multistep.ActionHalt
 		}
-		if checksum := u.Query().Get("checksum"); checksum != "" {
-			s.Checksum = checksum
-		}
-		if s.ChecksumType != "" && s.ChecksumType != "none" {
-			// add checksum to url query params as go getter will checksum for us
-			q := u.Query()
-			q.Set("checksum", s.ChecksumType+":"+s.Checksum)
-			u.RawQuery = q.Encode()
-		} else if s.Checksum != "" {
-			q := u.Query()
-			q.Set("checksum", s.Checksum)
-			u.RawQuery = q.Encode()
-		} else if s.ChecksumType != "none" {
-			errs = append(errs, fmt.Errorf("Empty checksum"))
-			continue
-		}
-
-		targetPath := s.TargetPath
-		if targetPath == "" {
-			// store file under sha1(hash) if set
-			// hash can sometimes be a checksum url
-			// otherwise, use sha1(source_url)
-			var shaSum [20]byte
-			if s.Checksum != "" {
-				shaSum = sha1.Sum([]byte(s.Checksum))
-			} else {
-				shaSum = sha1.Sum([]byte(u.String()))
-			}
-			targetPath = hex.EncodeToString(shaSum[:])
-			if s.Extension != "" {
-				targetPath += "." + s.Extension
-			}
-		}
-		targetPath, err = packer.CachePath(targetPath)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("CachePath: %s", err))
-			continue // may be another url will work
-		}
-		lockFile := targetPath + ".lock"
-
-		log.Printf("Acquiring lock for: %s (%s)", u.String(), lockFile)
-		lock := flock.New(lockFile)
-		lock.Lock()
-		defer lock.Unlock()
-
-		wd, err := os.Getwd()
-		if err != nil {
-			log.Printf("get working directory: %v", err)
-			// here we ignore the error in case the
-			// working directory is not needed.
-			// It would be better if the go-getter
-			// could guess it only in cases it is
-			// necessary.
-		}
-
-		ui.Say(fmt.Sprintf("Trying %s", u.String()))
-		gc := getter.Client{
-			Ctx:              ctx,
-			Dst:              targetPath,
-			Src:              u.String(),
-			ProgressListener: ui,
-			Pwd:              wd,
-			Dir:              false,
-		}
-
-		switch err := gc.Get(); err.(type) {
-		case nil: // success !
-			ui.Say(fmt.Sprintf("%s => %s", u.String(), targetPath))
-			state.Put(s.ResultKey, targetPath)
+		ui.Say(fmt.Sprintf("Trying %s", source))
+		dst, err := s.download(ctx, ui, source)
+		if err == nil {
+			state.Put(s.ResultKey, dst)
 			return multistep.ActionContinue
-		case *getter.ChecksumError:
-			errs = append(errs, err)
-			ui.Say(fmt.Sprintf("Checksum did not match, removing %s", targetPath))
-			if err := os.Remove(targetPath); err != nil {
-				errs = append(errs, err)
-			}
-		default:
-			errs = append(errs, err)
-			ui.Say(fmt.Sprintf("Download failed %s", err))
-			if ctx.Err() != nil {
-				state.Put("error", fmt.Errorf("Download cancelled: %v", errs))
-				return multistep.ActionHalt
-			}
 		}
-
+		// may be another url will work
+		errs = append(errs, err)
 	}
 
 	state.Put("error", fmt.Errorf("Downloading file: %v", errs))
 	return multistep.ActionHalt
+}
 
+func (s *StepDownload) download(ctx context.Context, ui packer.Ui, source string) (string, error) {
+	u, err := urlhelper.Parse(source)
+	if err != nil {
+		return "", fmt.Errorf("url parse: %s", err)
+	}
+	if checksum := u.Query().Get("checksum"); checksum != "" {
+		s.Checksum = checksum
+	}
+	if s.ChecksumType != "" && s.ChecksumType != "none" {
+		// add checksum to url query params as go getter will checksum for us
+		q := u.Query()
+		q.Set("checksum", s.ChecksumType+":"+s.Checksum)
+		u.RawQuery = q.Encode()
+	} else if s.Checksum != "" {
+		q := u.Query()
+		q.Set("checksum", s.Checksum)
+		u.RawQuery = q.Encode()
+	} else if s.ChecksumType != "none" {
+		return "", fmt.Errorf("Empty checksum")
+	}
+
+	targetPath := s.TargetPath
+	if targetPath == "" {
+		// store file under sha1(hash) if set
+		// hash can sometimes be a checksum url
+		// otherwise, use sha1(source_url)
+		var shaSum [20]byte
+		if s.Checksum != "" {
+			shaSum = sha1.Sum([]byte(s.Checksum))
+		} else {
+			shaSum = sha1.Sum([]byte(u.String()))
+		}
+		targetPath = hex.EncodeToString(shaSum[:])
+		if s.Extension != "" {
+			targetPath += "." + s.Extension
+		}
+	}
+	targetPath, err = packer.CachePath(targetPath)
+	if err != nil {
+		return "", fmt.Errorf("CachePath: %s", err)
+	}
+	lockFile := targetPath + ".lock"
+
+	log.Printf("Acquiring lock for: %s (%s)", u.String(), lockFile)
+	lock := flock.New(lockFile)
+	lock.Lock()
+	defer lock.Unlock()
+
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Printf("get working directory: %v", err)
+		// here we ignore the error in case the
+		// working directory is not needed.
+		// It would be better if the go-getter
+		// could guess it only in cases it is
+		// necessary.
+	}
+
+	ui.Say(fmt.Sprintf("Trying %s", u.String()))
+	gc := getter.Client{
+		Ctx:              ctx,
+		Dst:              targetPath,
+		Src:              u.String(),
+		ProgressListener: ui,
+		Pwd:              wd,
+		Dir:              false,
+	}
+
+	switch err := gc.Get(); err.(type) {
+	case nil: // success !
+		ui.Say(fmt.Sprintf("%s => %s", u.String(), targetPath))
+		return targetPath, nil
+	case *getter.ChecksumError:
+		ui.Say(fmt.Sprintf("Checksum did not match, removing %s", targetPath))
+		if err := os.Remove(targetPath); err != nil {
+			ui.Error(fmt.Sprintf("Failed to remove cache file. Please remove manually: %s", targetPath))
+		}
+		return "", err
+	default:
+		ui.Say(fmt.Sprintf("Download failed %s", err))
+		return "", err
+	}
 }
 
 func (s *StepDownload) Cleanup(multistep.StateBag) {}
