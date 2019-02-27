@@ -182,6 +182,21 @@ func TestStepDownload_Run(t *testing.T) {
 				toSha1(cs["/root/another.txt"]) + ".txt.lock",
 			},
 		},
+		{"wrong first 2 urls - absolute urls - checksum from parameter - no checksum type",
+			fields{
+				Url: []string{
+					abs(t, "./test-fixtures/root/another.txt"),
+					abs(t, "./test-fixtures/root/not_found"),
+					abs(t, "./test-fixtures/root/basic.txt"),
+				},
+				Checksum: cs["/root/basic.txt"],
+			},
+			multistep.ActionContinue,
+			[]string{
+				toSha1(cs["/root/basic.txt"]),
+				toSha1(cs["/root/basic.txt"]) + ".lock",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
